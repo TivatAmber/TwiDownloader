@@ -4,7 +4,7 @@ from pathlib import Path
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, 
     QHBoxLayout, QLineEdit, QPushButton, QProgressBar,
-    QLabel, QMessageBox
+    QLabel, QMessageBox, QGroupBox
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from TwiVideoDownloader.media_downloader import MediaDownloader
@@ -28,7 +28,6 @@ class DownloadWorker(QThread):
         
         Path(self.output_dir).mkdir(parents=True, exist_ok=True)
         
-        # 创建带进度回调的下载器
         self.downloader = MediaDownloader(
             self.base_url, 
             self.output_dir, 
@@ -41,21 +40,16 @@ class DownloadWorker(QThread):
     def handle_progress(self, type_str: str, current: int, total: int):
         """处理下载进度回调"""
         self.segment_progress.emit(type_str, current, total)
-        # 计算总体进度
-        progress = int((current / total) * 80) + 20  # 20-100范围
-        self.progress_updated.emit(f"下载中...", progress)
-
+        
     def handle_speed(self, speed_str: str):
         """处理速度回调"""
         self.speed_updated.emit(speed_str)
 
     async def download_video(self):
         try:
-            # 获取m3u8内容
             self.progress_updated.emit("获取视频信息...", 0)
             m3u8_content = await self.fetcher.fetch_m3u8_content(self.url)
             
-            # 下载视频
             self.progress_updated.emit("开始下载...", 20)
             output_file = await self.downloader.download(m3u8_content)
             
@@ -66,7 +60,6 @@ class DownloadWorker(QThread):
             self.error_occurred.emit(str(e))
 
     def run(self):
-        """运行下载任务"""
         asyncio.run(self.download_video())
 
 class MainWindow(QMainWindow):
@@ -92,21 +85,34 @@ class MainWindow(QMainWindow):
         layout.addLayout(url_layout)
         
         # 状态显示
-        status_layout = QHBoxLayout()
         self.status_label = QLabel("准备就绪")
-        self.speed_label = QLabel("")
-        status_layout.addWidget(self.status_label)
-        status_layout.addWidget(self.speed_label)
-        layout.addLayout(status_layout)
+        layout.addWidget(self.status_label)
         
-        # 总进度条
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setRange(0, 100)
-        layout.addWidget(self.progress_bar)
+        # 视频下载进度组
+        video_group = QGroupBox("视频下载进度")
+        video_layout = QVBoxLayout()
+        self.video_progress = QProgressBar()
+        self.video_progress.setRange(0, 100)
+        self.video_label = QLabel("0/0")
+        self.video_speed = QLabel("")
+        video_layout.addWidget(self.video_progress)
+        video_layout.addWidget(self.video_label)
+        video_layout.addWidget(self.video_speed)
+        video_group.setLayout(video_layout)
+        layout.addWidget(video_group)
         
-        # 分片进度显示
-        self.segment_label = QLabel("")
-        layout.addWidget(self.segment_label)
+        # 音频下载进度组
+        audio_group = QGroupBox("音频下载进度")
+        audio_layout = QVBoxLayout()
+        self.audio_progress = QProgressBar()
+        self.audio_progress.setRange(0, 100)
+        self.audio_label = QLabel("0/0")
+        self.audio_speed = QLabel("")
+        audio_layout.addWidget(self.audio_progress)
+        audio_layout.addWidget(self.audio_label)
+        audio_layout.addWidget(self.audio_speed)
+        audio_group.setLayout(audio_layout)
+        layout.addWidget(audio_group)
         
         # 输出信息
         self.output_label = QLabel()
@@ -124,10 +130,13 @@ class MainWindow(QMainWindow):
         
         self.download_btn.setEnabled(False)
         self.url_input.setEnabled(False)
-        self.progress_bar.setValue(0)
+        self.video_progress.setValue(0)
+        self.audio_progress.setValue(0)
         self.status_label.setText("准备下载...")
-        self.speed_label.clear()
-        self.segment_label.clear()
+        self.video_label.setText("0/0")
+        self.audio_label.setText("0/0")
+        self.video_speed.clear()
+        self.audio_speed.clear()
         self.output_label.clear()
         
         self.worker = DownloadWorker(url)
@@ -140,34 +149,35 @@ class MainWindow(QMainWindow):
 
     def update_progress(self, status: str, value: int):
         self.status_label.setText(status)
-        self.progress_bar.setValue(value)
 
     def update_segment_progress(self, type_str: str, current: int, total: int):
-        self.segment_label.setText(f"{type_str}: {current}/{total}")
+        progress = int((current / total) * 100)
+        if type_str == "视频":
+            self.video_progress.setValue(progress)
+            self.video_label.setText(f"{current}/{total}")
+        else:
+            self.audio_progress.setValue(progress)
+            self.audio_label.setText(f"{current}/{total}")
 
     def update_speed(self, speed_str: str):
-        self.speed_label.setText(speed_str)
+        if self.video_progress.value() < 100 and self.audio_progress.value() == 0:
+            self.video_speed.setText(speed_str)
+        elif self.audio_progress.value() < 100:
+            self.audio_speed.setText(speed_str)
 
     def download_finished(self, output_file: str):
-        """下载完成处理"""
         self.status_label.setText("下载完成!")
         self.output_label.setText(f"文件保存在: {output_file}")
         self.enable_inputs()
-        
-        # 显示完成消息
         QMessageBox.information(self, "完成", "视频下载完成!")
 
     def handle_error(self, error_msg: str):
-        """错误处理"""
         self.status_label.setText("下载失败")
         self.output_label.setText(f"错误: {error_msg}")
         self.enable_inputs()
-        
-        # 显示错误消息
         QMessageBox.critical(self, "错误", f"下载失败: {error_msg}")
 
     def enable_inputs(self):
-        """重新启用输入控件"""
         self.download_btn.setEnabled(True)
         self.url_input.setEnabled(True)
 

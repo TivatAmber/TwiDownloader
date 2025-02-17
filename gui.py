@@ -21,21 +21,26 @@ class DownloadWorker(QThread):
     def __init__(self, url: str):
         super().__init__()
         self.url = url
-        
-        self.base_url = "https://video.twimg.com"
-        self.output_dir = "downloads"
-        self.max_workers = 5
-        
-        Path(self.output_dir).mkdir(parents=True, exist_ok=True)
-        
-        self.downloader = MediaDownloader(
-            self.base_url, 
-            self.output_dir, 
-            self.max_workers,
-            progress_callback=self.handle_progress,
-            speed_callback=self.handle_speed
-        )
-        self.fetcher = VideoSourceFetcher()
+        self.downloader = None
+        self.fetcher = None
+
+    def init_downloader(self):
+        """延迟初始化下载器"""
+        if not self.downloader:
+            self.base_url = "https://video.twimg.com"
+            self.output_dir = "downloads"
+            self.max_workers = 5
+            
+            Path(self.output_dir).mkdir(parents=True, exist_ok=True)
+            
+            self.downloader = MediaDownloader(
+                self.base_url, 
+                self.output_dir, 
+                self.max_workers,
+                progress_callback=self.handle_progress,
+                speed_callback=self.handle_speed
+            )
+            self.fetcher = VideoSourceFetcher()
 
     def handle_progress(self, type_str: str, current: int, total: int):
         """处理下载进度回调"""
@@ -47,6 +52,7 @@ class DownloadWorker(QThread):
 
     async def download_video(self):
         try:
+            self.init_downloader()  # 开始下载时才初始化
             self.progress_updated.emit("获取视频信息...", 0)
             m3u8_content = await self.fetcher.fetch_m3u8_content(self.url)
             

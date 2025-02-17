@@ -1,17 +1,49 @@
-# 推特视频下载软件
+# Twitter视频下载器
 
-## 功能
-- 下载推特视频（含音频）
+一个用于下载Twitter视频的工具，支持命令行和图形界面。
+
+## 功能特点
+
+- 支持下载Twitter视频
+- 自动选择最高质量的视频和音频流
+- 显示下载进度和速度
+- 提供命令行和图形界面两种使用方式
+- 支持并发下载，提高下载速度
+
+## 安装要求
+
+- Python 3.9 或更高版本
+- FFmpeg（用于合并视频和音频）
+
+## 安装方法
+
+1. 安装 FFmpeg
+
+   - Windows: 
+     ```
+     winget install ffmpeg
+     ```
+   - macOS:
+     ```
+     brew install ffmpeg
+     ```
+   - Linux:
+     ```
+     sudo apt install ffmpeg  # Ubuntu/Debian
+     sudo dnf install ffmpeg  # Fedora
+     ```
+
+2. 安装 Python 包
+   ```
+   pip install .
+   ```
 
 ## 使用方法
 
-1. 安装依赖
-```bash
-pip install -r requirements.txt
-```
-如果没有安装 `ffmpeg`，请先安装 `ffmpeg`
+### 图形界面
 
-2. 运行程序
+运行以下命令启动图形界面：
+
 ```bash
 python gui.py
 ```
@@ -34,4 +66,32 @@ python cli.py
 - 添加字幕下载
 - 添加自选下载
 - ~~GUI界面~~
+
+## 开发说明
+
+### 环境配置
+```bash
+# 创建虚拟环境
+python -m venv .venv
+source .venv/bin/activate  # Linux/Mac
+.venv\Scripts\activate     # Windows
+
+# 安装依赖
+pip install -e .
+```
+
+### 打包应用
+```bash
+# 安装打包工具
+pip install pyinstaller
+
+# 执行打包
+python build.py
+```
+
+打包后的文件在 `dist` 目录中：
+- `twi-dl-gui.exe` - Windows图形界面版本
+- `twi-dl-cli.exe` - Windows命令行版本
+- `twi-dl-gui` - Linux/Mac图形界面版本
+- `twi-dl-cli` - Linux/Mac命令行版本
 

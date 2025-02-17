@@ -13,7 +13,11 @@ pip install -r requirements.txt
 
 2. 运行程序
 ```bash
-python main.py
+python gui.py
+```
+或者
+```bash
+python cli.py
 ```
 
 3. 输入推文URL
@@ -24,9 +28,10 @@ python main.py
 
 ## 更新日志
 - 2025-02-16 初始化项目
+- 2025-02-16 添加图形化界面下载
 
 ## 未来计划
 - 添加字幕下载
 - 添加自选下载
-- GUI界面
+- ~~GUI界面~~
 

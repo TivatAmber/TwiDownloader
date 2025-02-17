@@ -10,7 +10,8 @@ from TwiVideoDownloader.total import M3U8Parser
 
 class MediaDownloader:
     """媒体下载器，处理视频和音频的下载与合并"""
-    def __init__(self, base_url: str, output_dir: str = "downloads", max_workers: int = 5):
+    def __init__(self, base_url: str, output_dir: str = "downloads", 
+                 max_workers: int = 5, progress_callback=None, speed_callback=None):
         self.base_url = base_url
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -18,10 +19,24 @@ class MediaDownloader:
         self.video_temp_dir = self.output_dir / "video_temp"
         self.audio_temp_dir = self.output_dir / "audio_temp"
         
-        self.video_downloader = VideoDownloader(base_url, str(self.video_temp_dir), max_workers)
-        self.audio_downloader = AudioDownloader(base_url, str(self.audio_temp_dir), max_workers)
+        self.video_downloader = VideoDownloader(
+            base_url, 
+            str(self.video_temp_dir), 
+            max_workers,
+            progress_callback=lambda current, total: self._handle_progress("视频", current, total),
+            speed_callback=self._handle_speed
+        )
+        self.audio_downloader = AudioDownloader(
+            base_url, 
+            str(self.audio_temp_dir), 
+            max_workers,
+            progress_callback=lambda current, total: self._handle_progress("音频", current, total),
+            speed_callback=self._handle_speed
+        )
         self.parser = M3U8Parser()
         self.session = requests.Session()
+        self.progress_callback = progress_callback
+        self.speed_callback = speed_callback
 
     async def download(self, m3u8_content: str) -> str:
         """下载并合并最高质量的视频和音频流"""
@@ -30,7 +45,6 @@ class MediaDownloader:
             self.audio_temp_dir.mkdir(parents=True, exist_ok=True)
             
             self.parser.parse(m3u8_content)
-            
             best_stream = self.parser.get_highest_quality_stream()
             if not best_stream:
                 raise ValueError("没有找到可用的视频流")
@@ -91,3 +105,13 @@ class MediaDownloader:
                 shutil.rmtree(self.audio_temp_dir)
         except Exception as e:
             print(f"清理临时目录失败: {str(e)}")
+
+    def _handle_progress(self, type_str: str, current: int, total: int):
+        """处理进度回调"""
+        if self.progress_callback:
+            self.progress_callback(type_str, current, total)
+
+    def _handle_speed(self, speed_str: str):
+        """处理速度回调"""
+        if self.speed_callback:
+            self.speed_callback(speed_str)

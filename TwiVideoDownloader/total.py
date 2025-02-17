@@ -9,25 +9,25 @@ from TwiVideoDownloader.audio import AudioDownloader
 @dataclass
 class MediaInfo:
     """媒体信息数据类"""
-    type: str
-    name: str
-    group_id: str
-    uri: str
-    language: Optional[str] = None
-    autoselect: bool = False
-    default: bool = False
-    characteristics: Optional[str] = None
+    type: str        # 媒体类型
+    name: str        # 名称
+    group_id: str    # 组ID
+    uri: str         # 资源URL
+    language: Optional[str] = None  # 语言
+    autoselect: bool = False        # 自动选择
+    default: bool = False           # 是否默认
+    characteristics: Optional[str] = None  # 特征
 
 @dataclass
 class StreamInfo:
     """流信息数据类"""
-    bandwidth: int
-    resolution: str
-    codecs: str
-    subtitles: Optional[str]
-    audio: str
-    uri: str
-    average_bandwidth: Optional[int] = None
+    bandwidth: int           # 带宽
+    resolution: str         # 分辨率
+    codecs: str            # 编码格式
+    subtitles: Optional[str] # 字幕
+    audio: str             # 音频
+    uri: str              # 资源URL
+    average_bandwidth: Optional[int] = None  # 平均带宽
 
 class M3U8Parser:
     """M3U8文件解析器"""

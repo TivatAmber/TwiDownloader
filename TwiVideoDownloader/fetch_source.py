@@ -3,7 +3,7 @@ import json
 import requests
 
 class VideoSourceFetcher:
-    # Twitter API公共token
+    """Twitter视频源获取器"""
     BEARER_TOKEN = "AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA"
 
     def __init__(self):
